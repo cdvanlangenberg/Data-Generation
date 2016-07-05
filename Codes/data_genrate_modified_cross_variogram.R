@@ -1,7 +1,8 @@
 ####### this code will generate the grided data for 2 latitudes X given number of longitudes
 ####### and compare with cross variogram 
-
+if (!require("binhf")) install.packages("binhf")
 library(binhf)
+
 nn = 100 # number of iterations
 
 nl = 2
