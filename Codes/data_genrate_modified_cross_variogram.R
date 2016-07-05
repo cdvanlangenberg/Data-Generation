@@ -1,5 +1,6 @@
 ####### this code will generate the grided data for 2 latitudes X given number of longitudes
 ####### and compare with cross variogram 
+
 if (!require("binhf")) install.packages("binhf")
 library(binhf)
 
@@ -27,6 +28,7 @@ n <- p ^ m        # model1
 
 phi <- c(45, 60) * pi / 180
 
+# choose covarince function
 mycov <- function(lat1, lat2)
 {
   cm = C1 * (C2 - exp(-a * abs(lat1)) - exp(-a * abs(lat2)) + exp(-a * abs(lat1 -lat2)))
