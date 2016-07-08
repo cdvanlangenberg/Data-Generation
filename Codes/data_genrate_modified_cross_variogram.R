@@ -4,10 +4,10 @@
 if (!require("binhf")) install.packages("binhf")
 library(binhf)
 
-nn = 100 # number of iterations
+nn = 200 # number of iterations
 
 nl = 2
-nL = 36
+nL = 72
 N = nL / 2
 m = 0:(1 * N)
 
@@ -19,8 +19,8 @@ p = .5
 m1 = 2:3
 
 ######## select a model ###################
-n <- p ^ m        # model1
-# n <- p ^ m / m      # model2
+# n <- p ^ m        # model1
+n <- p ^ m / m      # model2
 # n <- (1/m) ^ 4    # model3
 # n <- 1/(2 * m)    # model4
 
