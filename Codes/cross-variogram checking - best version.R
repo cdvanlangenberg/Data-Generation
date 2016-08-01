@@ -11,7 +11,7 @@ nn = 300     # number of iterations
 nl = 2
 nL = 100
 N = nL / 2
-m = 0:(4 * N)
+m = 0:(1 * N)
 
 C1 = 1
 C2 = 1
@@ -29,7 +29,7 @@ n <- p ^ m        # model1
 
 ######## select two latitudes #############
 
-phi <- c(150, 10) * pi / 180
+phi <- c(37, 37) * pi / 180
 
 # choose covarince function
 mycov <- function(lat1, lat2)
@@ -83,7 +83,7 @@ for (hh in 1:nn) {
     v = eigen(Kv[, , kk])$vectors
     
     sqKv <- v %*% diag(sqrt(r[kk, ])) %*% t(v)
-    set.seed(12345 + hh*53221+kk*4346)
+    set.seed(12345 + hh*53221 + kk*4346)
     
     x <- rnorm(n = 2 * nl,
                mean = 0,
@@ -141,10 +141,10 @@ l2 <- c(0, lambda[nL:(1 + nL / 2)])
 
 #For model 1 ============================================================== 
 v <- mycov(phi[1], phi[2])
-v0 <- 1 * v * (1-p^2) / (1 - 2*p*cos(u * (phi[1] - phi[2]))+p^2)
-v1 <- 1 * v * (1-p^2) / (1 - 2*p*cos(l1 + u * (phi[1] - phi[2]))+p^2)
-v2 <- 1 * v * (1-p^2) / (1 - 2*p*cos(l2 + u * (phi[1] - phi[2]))+p^2)
-var_phi <- 1*(v0 - .5 * (v1 + v2))
+v0 <- 1 * v * (1 - p ^ 2) / (1 - 2 * p * cos(u * (phi[1] - phi[2])) + p ^ 2)
+v1 <- 1 * v * (1 - p ^ 2) / (1 - 2 * p * cos(l1 + u * (phi[1] - phi[2])) + p ^ 2)
+v2 <- 1 * v * (1 - p ^ 2) / (1 - 2 * p * cos(l2 + u * (phi[1] - phi[2])) + p ^ 2)
+var_phi <- 1 * (v0 - .5 * (v1 + v2))
 #==========================================================================
 
 

@@ -98,11 +98,11 @@ lambda <- ifelse(lambda1>pi, lambda1-2*pi, lambda1 )
 l1 <- lambda[1:(1+nL/2)]
 l2 <- c(0,lambda[nL:(1+nL/2)])
 
-# v <- mycov(phi[1],phi[2])
-# v0 <- 1*v*log(1/(2*(1-cos(u*(phi[1]-phi[2])))))
-# v1 <- 1*v*log(1/(2*(1-cos(l1+u*(phi[1]-phi[2])))))
-# v2 <- 1*v*log(1/(2*(1-cos(l2+u*(phi[1]-phi[2])))))
-# var_phi <- .5*(v0 - .5*(v1+v2))
+v <- mycov(phi[1],phi[2])
+v0 <- 1*v*log(1/(2*(1-cos(u*(phi[1]-phi[2])))))
+v1 <- 1*v*log(1/(2*(1-cos(l1+u*(phi[1]-phi[2])))))
+v2 <- 1*v*log(1/(2*(1-cos(l2+u*(phi[1]-phi[2])))))
+var_phi <- .5*(v0 - .5*(v1+v2))
 
 
 

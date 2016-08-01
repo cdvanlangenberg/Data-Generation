@@ -1,13 +1,21 @@
 ####### this code will generate the grided data for 2 latitudes X given number of longitudes
-####### and compare with cross variogram 
+####### and compare with cross variogram
 
-if (!require("binhf")) install.packages("binhf")
-library(binhf)
+list.packages <-
+  c("plyr", "foreach", "doParallel", "binhf")
 
-nn = 200 # number of iterations
+new.packages <-
+  list.packages[!(list.packages %in% installed.packages()[, "Package"])]
+if (length(new.packages))
+  install.packages(new.packages)
+
+# Load packages into session
+sapply(list.packages, require, character.only = TRUE)
+
+nn = 2500 # number of iterations
 
 nl = 2
-nL = 72
+nL = 100
 N = nL / 2
 m = 0:(1 * N)
 
@@ -19,23 +27,24 @@ p = .5
 m1 = 2:3
 
 ######## select a model ###################
-# n <- p ^ m        # model1
-n <- p ^ m / m      # model2
+n <- p ^ m        # model1
+# n <- p ^ m / m      # model2
 # n <- (1/m) ^ 4    # model3
 # n <- 1/(2 * m)    # model4
 
 ######## select two latitudes #############
 
-phi <- c(45, 60) * pi / 180
+phi <- c(50, 80) * pi / 180
 
 # choose covarince function
 mycov <- function(lat1, lat2)
 {
-  cm = C1 * (C2 - exp(-a * abs(lat1)) - exp(-a * abs(lat2)) + exp(-a * abs(lat1 -lat2)))
+  cm = C1 * (C2 - exp(-a * abs(lat1)) - exp(-a * abs(lat2)) + exp(-a * abs(lat1 - lat2)))
   #cm = C1*(C2-(1/sqrt(a^2+lat1^2))-(1/sqrt(a^2+lat2^2))+(1/sqrt(a^2+(lat1-lat2)^2)))
   
   cm
 }
+
 
 lat1 <- rep(phi, nl)
 lat2 = rep(phi, each = nl)
@@ -43,11 +52,25 @@ lambda <- 2 * (1:nL - 1) * pi / nL
 
 Cm = mycov(lat1, lat2)
 X <- array(0, c(nl, nL, nn)) # the generated data
-var_sim <- array(0, c(nn, nL))
+var_sim <- matrix(0, nrow = nn, ncol = nL)
 mean_sim <- array(0, c(nn, nl))
 cor_sim <- array(0, c(nn, 1))
 
-for (hh in 1:nn) {
+pb <-
+  txtProgressBar(min = 0, max = nn, style = 3) # this is not usefull if processing parallel
+
+cores <- detectCores()
+cl <- makeCluster(cores)
+registerDoParallel(cl)
+
+hh <- as.integer()
+
+foreach(hh = 1:nn) %do% {
+  sapply(list.packages, require, character.only = TRUE)
+  
+  setTxtProgressBar(pb, hh)
+  
+  # for (hh in 1:nn) {
   RCm <- array(0, c(rep(length(phi), 2), length(m)))
   ICm <- array(0, c(rep(length(phi), 2), length(m)))
   Kv <-  array(0, c(rep(2 * length(phi), 2), length(m)))
@@ -75,18 +98,18 @@ for (hh in 1:nn) {
       Kv[1:nl, 1:nl, kk] = RCm[, , kk]
     }
     
-    r[kk, ] = eigen(Kv[, , kk])$values
-    r[kk, ] <- ifelse(r[kk, ] < 0, 0, r[kk, ])
+    r[kk,] = eigen(Kv[, , kk])$values
+    r[kk,] <- ifelse(r[kk,] < 0, 0, r[kk,])
     v = eigen(Kv[, , kk])$vectors
     
-    sqKv <- v %*% diag(sqrt(r[kk, ])) %*% t(v)
-    set.seed(12345 + hh)
+    sqKv <- v %*% diag(sqrt(r[kk,])) %*% t(v)
+    set.seed(12345 + hh * 53221 + kk * 4346)
     
     x <- rnorm(n = 2 * nl,
                mean = 0,
                sd = 1)
     
-    d[kk, ] <- t(sqKv %*% x)  #*(cos(lat1))^m[kk]
+    d[kk,] <- t(sqKv %*% x)  #*(cos(lat1))^m[kk]
     rownames(d) <- m
     colnames(d) <- c(paste0("R", 1:nl), paste0("I", 1:nl))
   }
@@ -96,7 +119,7 @@ for (hh in 1:nn) {
     for (jj in 1:nL) {
       X[ii, jj, hh] <-
         (d[1, ii] + 2 * sum(d[2:length(m), ii] * cos(m[-1] * lambda[jj])
-                            - d[2:length(m), ii + nl] * sin(m[-1] * lambda[jj]))) # + m1[ii]  #*cos(phi[ii])
+                            - d[2:length(m), ii + nl] * sin(m[-1] * lambda[jj])))  + m1[ii]  #*cos(phi[ii])
     }
   }
   
@@ -105,18 +128,22 @@ for (hh in 1:nn) {
   
   # the emperical variogram formula given by Hans Wackernagel 20.15
   
-  for (jj in 1:nL) {
+    for (jj in 1:nL) {
     Y1 = Y2 <- NULL
     Y1 <- array(shift(X[1, , hh], -(jj - 1)) - X[1, , hh], nL)
     Y2 <- array(shift(X[2, , hh], -(jj - 1)) - X[2, , hh], nL)
     var_sim[hh, jj] <- (1 / (2 * nL)) * sum(Y1 * Y2)
   }
-                  
   
-  mean_sim[hh, ] <- apply(X[, , hh] , MARGIN = 1, mean)
-  cor_sim[hh, ] <- cor(X[1, , hh], X[2, , hh])
-  
+  mean_sim[hh,] <- apply(X[, , hh] , MARGIN = 1, mean)
+  cor_sim[hh,] <- cor(X[1, , hh], X[2, , hh])
+
+invisible(gc())
+   
 }
+
+stopCluster(cl)
+close(pb)
 
 var_sim <- colMeans(var_sim)
 
@@ -127,12 +154,24 @@ var_sim <- colMeans(var_sim)
 l1 <- lambda[1:(1 + nL / 2)]
 l2 <- c(0, lambda[nL:(1 + nL / 2)])
 
+#For model 1 ==============================================================
 v <- mycov(phi[1], phi[2])
-v0 <- 1 * v * log(1 / (2 * (1 - cos(u * (phi[1] - phi[2])))))
-v1 <- 1 * v * log(1 / (2 * (1 - cos(l1 + u * (phi[1] - phi[2])))))
-v2 <- 1 * v * log(1 / (2 * (1 - cos(l2 + u * (phi[1] - phi[2])))))
-var_phi <- 1*(v0 - .5 * (v1 + v2))
+v0 <-
+  1 * v * (1 - p ^ 2) / (1 - 2 * p * cos(u * (phi[1] - phi[2])) + p ^ 2)
+v1 <-
+  1 * v * (1 - p ^ 2) / (1 - 2 * p * cos(l1 + u * (phi[1] - phi[2])) + p ^ 2)
+v2 <-
+  1 * v * (1 - p ^ 2) / (1 - 2 * p * cos(l2 + u * (phi[1] - phi[2])) + p ^ 2)
+var_phi <- 1 * (v0 - .5 * (v1 + v2))
+#==========================================================================
 
+#For model 4 (?)======================================================
+# v <- mycov(phi[1], phi[2])
+# v0 <- 1 * v * log(1 / (2 * (1 - cos(u * (phi[1] - phi[2])))))
+# v1 <- 1 * v * log(1 / (2 * (1 - cos(l1 + u * (phi[1] - phi[2])))))
+# v2 <- 1 * v * log(1 / (2 * (1 - cos(l2 + u * (phi[1] - phi[2])))))
+# var_phi <- 1*(v0 - .5 * (v1 + v2))
+#==========================================================================
 
 
 plot(
@@ -146,7 +185,7 @@ plot(
   ylab = "Variance",
   pch = 19,
   xlab = expression(paste(Delta, lambda)),
-  ylim = c(min(var_sim),max(var_sim,var_phi)), 
+  ylim = c(min(var_sim), max(var_sim, var_phi)),
   main = paste(
     "nl=",
     nl,
@@ -180,5 +219,3 @@ legend(
   bty = "n",
   lwd = 1:2
 )
-
-
