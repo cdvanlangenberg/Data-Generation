@@ -6,7 +6,7 @@
 if (!require("binhf")) install.packages("binhf")
 library(binhf)
 
-nn = 300     # number of iterations
+nn = 500     # number of iterations
 
 nl = 2
 nL = 100
@@ -29,12 +29,12 @@ n <- p ^ m        # model1
 
 ######## select two latitudes #############
 
-phi <- c(37, 37) * pi / 180
+phi <- c(10, 80) * pi / 180
 
 # choose covarince function
 mycov <- function(lat1, lat2)
 {
-  cm = C1 * (C2 - exp(-a * abs(lat1)) - exp(-a * abs(lat2)) + exp(-a * abs(lat1 -lat2)))
+  cm = C1 * (C2 - exp(-a * abs(lat1)) - exp(-a * abs(lat2)) + exp(-a * abs(lat1 - lat2)))
   #cm = C1*(C2-(1/sqrt(a^2+lat1^2))-(1/sqrt(a^2+lat2^2))+(1/sqrt(a^2+(lat1-lat2)^2)))
   
   cm
@@ -83,7 +83,7 @@ for (hh in 1:nn) {
     v = eigen(Kv[, , kk])$vectors
     
     sqKv <- v %*% diag(sqrt(r[kk, ])) %*% t(v)
-    set.seed(12345 + hh*53221 + kk*4346)
+     set.seed(12345 + hh * 53221 + kk * 4346)
     
     x <- rnorm(n = 2 * nl,
                mean = 0,

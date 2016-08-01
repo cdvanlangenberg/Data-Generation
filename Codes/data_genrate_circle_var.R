@@ -9,9 +9,9 @@ if (length(new.packages))
 # Load packages into session
 sapply(list.packages, require, character.only = TRUE)
 
-nn = 4000
+nn = 400
 nl = 1
-nL = 48
+nL = 100
 N = nL / 2
 m = 0:N
 
@@ -35,14 +35,14 @@ v = eigen(Cm)$vectors
 
 sqCm <- round(v %*% diag(sqrt(r)) %*% t(v), 8)
 
-cov_sim <- array(0, c(nn, nL))
+var_sim <- array(0, c(nn, nL))
 
 pb <-
   txtProgressBar(min = 0, max = nn, style = 3) 
 
-cores <- detectCores()
-cl <- makeCluster(cores)
-registerDoParallel(cl)
+# cores <- detectCores()
+# cl <- makeCluster(cores)
+# registerDoParallel(cl)
 
 hh <- as.integer()
 
@@ -50,30 +50,34 @@ foreach(hh = 1:nn) %do% {
 setTxtProgressBar(pb, hh)
   set.seed(12345 + hh)
   x <- rnorm(nL, mean = 0, sd = 1)
-  x <- (x - mean(x)) / sd(x)
+  # x <- (x - mean(x)) / sd(x)
   X = t(sqCm %*% x)
   
   for (jj in 1:nL) {
     Y <- NULL
     Y <- rbind(X, shift(X, -(jj - 1)))
-    cov_sim[hh, jj] <-
-      (1 / nL) * sum((Y[1, ] - Y[2, ]) ^ 2)  - mean(Y[1,])*mean(Y[2,])
+    var_sim[hh, jj] <-
+      (1 / nL) * sum((Y[1, ] - Y[2, ]) ^ 2)  #- mean(Y[1,])*mean(Y[2,])
   }
 }
 
-stopCluster(cl)
+# stopCluster(cl)
 close(pb)
 
 
-cov_ave <- colMeans(cov_sim) # this is the varince
+var_ave <- colMeans(var_sim) # this is the varince
 
 
 var = 2 * (1 - exp(-a * abs(lambda)))
+
+# pdf("Results/variogram_plot_4000.pdf",height = 5, width = 7)
+
 plot(
   lambda,
   var,
   xaxt = "n",
-  ylim = c(min(cov_ave), 3),
+  ylim = c(min(var_ave), max(var_ave)),
+  ylab = "Variance",
   bty = "n",
   pch = 19,
   main = paste("Variogram; C1=", C1, "nL=", nL),
@@ -81,7 +85,7 @@ plot(
 )
 lines(
   lambda,
-  cov_ave,
+  var_ave,
   col = "red",
   bty = "n",
   xaxt = "n",
@@ -90,9 +94,11 @@ lines(
 )
 axis(1, at = lambda, labels = lambda * 180 / pi)
 legend(
-  "topright",
+  "bottomright",
   legend = c("formula", "simulation"),
   col = 1:2,
   pch = c(19, 17),
   bty = "n"
 )
+
+# dev.off()

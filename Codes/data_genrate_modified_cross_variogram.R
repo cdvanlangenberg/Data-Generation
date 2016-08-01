@@ -1,8 +1,8 @@
 ####### this code will generate the grided data for 2 latitudes X given number of longitudes
 ####### and compare with cross variogram
 
-list.packages <-
-  c("plyr", "foreach", "doParallel", "binhf")
+# list.packages <- c("plyr", "foreach", "doParallel", "binhf")
+list.packages <- c("foreach", "binhf")
 
 new.packages <-
   list.packages[!(list.packages %in% installed.packages()[, "Package"])]
@@ -12,7 +12,7 @@ if (length(new.packages))
 # Load packages into session
 sapply(list.packages, require, character.only = TRUE)
 
-nn = 2500 # number of iterations
+nn = 400 # number of iterations
 
 nl = 2
 nL = 100
@@ -34,7 +34,7 @@ n <- p ^ m        # model1
 
 ######## select two latitudes #############
 
-phi <- c(50, 80) * pi / 180
+phi <- c(20, 80) * pi / 180
 
 # choose covarince function
 mycov <- function(lat1, lat2)
@@ -185,7 +185,7 @@ plot(
   ylab = "Variance",
   pch = 19,
   xlab = expression(paste(Delta, lambda)),
-  ylim = c(min(var_sim), max(var_sim, var_phi)),
+  ylim = c(min(var_sim, var_phi), max(var_sim, var_phi)),
   main = paste(
     "nl=",
     nl,
